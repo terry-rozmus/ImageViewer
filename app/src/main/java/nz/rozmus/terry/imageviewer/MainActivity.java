@@ -12,6 +12,17 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.GridView;
+import android.provider.MediaStore;
+import android.database.Cursor;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.net.Uri;
+import android.widget.Toast;
+import android.content.Context;
+
+import java.util.List;
+import java.util.ArrayList;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -24,6 +35,8 @@ public class MainActivity extends Activity {
     Button reload;
     GridView imagelist;
     ImageAdapter adapter;
+    List<String> uris = new ArrayList<>();
+
     // list of camera URLs, anything that returns a jpeg will work here.
     String urls[]={
             "https://www.surf2surf.com/reports/freecams/RG",
@@ -118,21 +131,17 @@ public class MainActivity extends Activity {
                 @Override
                 protected Bitmap doInBackground(ViewHolder... params) {
                     vh=params[0];
-                    // get the string for the url
-                    String address=urls[vh.position%urls.length];
+
+                    // get the string for the uri file location
+                    String uriStr = uris.get(vh.position%uris.size());
+                    Uri targetUri = Uri.parse("file://" + uriStr);
+
                     Bitmap bmp=null;
                     try {
-                        Log.i(TAG,"Loading:"+address);
-                        URL url = new URL(address);
-                        // open network connection
-                        URLConnection connection=url.openConnection();
-                        // vh position might have changed
-                        if(vh.position!=i)
-                            return null;
-                        // decode the jpeg into a bitmap
-                        bmp = BitmapFactory.decodeStream(connection.getInputStream());
+                        // decode the phone images into bitmaps
+                        bmp = BitmapFactory.decodeStream(getContentResolver().openInputStream(targetUri));
                     } catch (Exception e) {
-                        Log.i(TAG,"Error Loading:"+address);
+                        Log.i(TAG,"Error Loading:" + uriStr);
                         e.printStackTrace();
                     }
                     // return the bitmap (might be null)
@@ -149,9 +158,29 @@ public class MainActivity extends Activity {
         }
     }
 
+    void init() {
+        String[] star = {"*"};
+        Cursor cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                star, null, null, "date_added DESC");
+        try {
+            while (cursor.moveToNext()) {
+                String uri = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+                uris.add(uri);
+            }
+        } finally {
+            cursor.close();
+        }
+        Log.i("URI List", uris.toString());
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT > 23 && checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+        } else {
+            init();
+        }
         setContentView(R.layout.activity_main);
         imagelist =findViewById(R.id.beaches);
         adapter=new ImageAdapter();
@@ -163,6 +192,16 @@ public class MainActivity extends Activity {
                 adapter.notifyDataSetChanged();
             }
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        if(grantResults.length > 0
+                && grantResults[0] != PackageManager.PERMISSION_GRANTED)
+            finish();
+        else
+            init();
     }
 }
 
