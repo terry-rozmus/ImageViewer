@@ -79,20 +79,37 @@ public class MainActivity extends Activity {
             // make an AsyncTask to load the image
             new AsyncTask<ViewHolder,Void,Bitmap>() {
                 private ViewHolder vh;
+                BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
+
                 @Override
                 protected Bitmap doInBackground(ViewHolder... params) {
                     vh=params[0];
+                    bitmapOptions.inJustDecodeBounds = true;
 
                     // get the string for the uri file location
-                    String uriStr = uris.get(vh.position%uris.size());
-                    Uri targetUri = Uri.parse("file://" + uriStr);
+                    String uri = uris.get(vh.position%uris.size());
 
                     Bitmap bitmap = null;
                     try {
-                        // decode the phone images into bitmaps
-                        bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(targetUri));
+                        // Get the size of the image
+                        BitmapFactory.decodeFile(uri, bitmapOptions);
+
+                        // Find scaling factor
+                        int dimension = Math.min(bitmapOptions.outHeight, bitmapOptions.outWidth);
+                        float scale = (float) dimension / 100;
+
+                        // Find sampling size
+                        int sampleSize = 1;
+                        while (sampleSize < scale) {
+                            sampleSize *= 2; // Must be a power of 2
+                        }
+                        bitmapOptions.inSampleSize = sampleSize;
+
+                        // Decode the phone images into bitmaps
+                        bitmapOptions.inJustDecodeBounds = false;
+                        bitmap = BitmapFactory.decodeFile(uri, bitmapOptions);
                     } catch (Exception e) {
-                        Log.i(TAG,"Error Loading:" + uriStr);
+                        Log.i(TAG,"Error Loading:" + uri);
                         e.printStackTrace();
                     }
                     // return the bitmap (might be null)
