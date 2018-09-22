@@ -14,7 +14,7 @@
         android:text="Reload" />
 
     <GridView
-        android:id="@+id/beaches"
+        android:id="@+id/images"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/darker_gray"

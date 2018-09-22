@@ -18,13 +18,9 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.net.Uri;
-import android.widget.Toast;
-import android.content.Context;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.net.URL;
-import java.net.URLConnection;
 
 //
 // Show images on phone
@@ -37,79 +33,34 @@ public class MainActivity extends Activity {
     ImageAdapter adapter;
     List<String> uris = new ArrayList<>();
 
-    // list of camera URLs, anything that returns a jpeg will work here.
-    String urls[]={
-            "https://www.surf2surf.com/reports/freecams/RG",
-            "https://www.surf2surf.com/reports/freecams/MW",
-            "https://www.surf2surf.com/reports/freecams/PH",
-            "https://www.surf2surf.com/reports/freecams/NP",
-            "https://www.surf2surf.com/reports/freecams/TA",
-            "https://www.surf2surf.com/reports/freecams/MB",
-            "https://www.surf2surf.com/reports/freecams/WG",
-            "https://www.surf2surf.com/reports/freecams/MM",
-            "https://www.surf2surf.com/reports/freecams/MC",
-            "https://www.surf2surf.com/reports/freecams/HB",
-            "https://www.surf2surf.com/reports/freecams/WM",
-            "https://www.surf2surf.com/reports/freecams/GS",
-            "https://www.surf2surf.com/reports/freecams/WA",
-            "https://www.surf2surf.com/reports/freecams/DN",
-
-            "https://www.surf2surf.com/reports/freecams/RG",
-            "https://www.surf2surf.com/reports/freecams/MW",
-            "https://www.surf2surf.com/reports/freecams/PH",
-            "https://www.surf2surf.com/reports/freecams/NP",
-            "https://www.surf2surf.com/reports/freecams/TA",
-            "https://www.surf2surf.com/reports/freecams/MB",
-            "https://www.surf2surf.com/reports/freecams/WG",
-            "https://www.surf2surf.com/reports/freecams/MM",
-            "https://www.surf2surf.com/reports/freecams/MC",
-            "https://www.surf2surf.com/reports/freecams/HB",
-            "https://www.surf2surf.com/reports/freecams/WM",
-            "https://www.surf2surf.com/reports/freecams/GS",
-            "https://www.surf2surf.com/reports/freecams/WA",
-            "https://www.surf2surf.com/reports/freecams/DN",
-
-            "https://www.surf2surf.com/reports/freecams/RG",
-            "https://www.surf2surf.com/reports/freecams/MW",
-            "https://www.surf2surf.com/reports/freecams/PH",
-            "https://www.surf2surf.com/reports/freecams/NP",
-            "https://www.surf2surf.com/reports/freecams/TA",
-            "https://www.surf2surf.com/reports/freecams/MB",
-            "https://www.surf2surf.com/reports/freecams/WG",
-            "https://www.surf2surf.com/reports/freecams/MM",
-            "https://www.surf2surf.com/reports/freecams/MC",
-            "https://www.surf2surf.com/reports/freecams/HB",
-            "https://www.surf2surf.com/reports/freecams/WM",
-            "https://www.surf2surf.com/reports/freecams/GS",
-            "https://www.surf2surf.com/reports/freecams/WA",
-            "https://www.surf2surf.com/reports/freecams/DN",
-
-    };
     // The adapter, this supplies data to the ListView,
     // it grabs an image in the background using an AsyncTask
     public class ImageAdapter extends BaseAdapter {
-        // Holds the beach imageview and it's position in the list
+        // Holds phone image and it's position in the list
         class ViewHolder {
             int position;
             ImageView image;
         }
-        // How many items in the ListView, should be urls.length but make it 1000 to show
-        // long lists
+
+        // How many items in the image uris ListView
         @Override
         public int getCount() {
-            return urls.length;
+            return uris.size();
         }
+
         @Override
         public Object getItem(int i) {
             return null;
         }
+
         @Override
         public long getItemId(int i) {
             return i;
         }
+
         @Override
         public View getView(final int i, View convertView, ViewGroup viewGroup) {
-            Log.i(TAG,"getView:"+i+","+convertView);
+            Log.i(TAG,"getView:" + i + "," + convertView);
             ViewHolder vh;
             if (convertView == null) {
                 // if it's not recycled, inflate it from xml
@@ -136,16 +87,16 @@ public class MainActivity extends Activity {
                     String uriStr = uris.get(vh.position%uris.size());
                     Uri targetUri = Uri.parse("file://" + uriStr);
 
-                    Bitmap bmp=null;
+                    Bitmap bitmap = null;
                     try {
                         // decode the phone images into bitmaps
-                        bmp = BitmapFactory.decodeStream(getContentResolver().openInputStream(targetUri));
+                        bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(targetUri));
                     } catch (Exception e) {
                         Log.i(TAG,"Error Loading:" + uriStr);
                         e.printStackTrace();
                     }
                     // return the bitmap (might be null)
-                    return bmp;
+                    return bitmap;
                 }
                 @Override
                 protected void onPostExecute(Bitmap bmp) {
@@ -158,7 +109,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    void init() {
+    void getPhoneImageUris() {
         String[] star = {"*"};
         Cursor cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 star, null, null, "date_added DESC");
@@ -170,8 +121,8 @@ public class MainActivity extends Activity {
         } finally {
             cursor.close();
         }
-        Log.i("URI List", uris.toString());
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -179,10 +130,10 @@ public class MainActivity extends Activity {
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         } else {
-            init();
+            getPhoneImageUris();
         }
         setContentView(R.layout.activity_main);
-        imagelist =findViewById(R.id.beaches);
+        imagelist =findViewById(R.id.images);
         adapter=new ImageAdapter();
         imagelist.setAdapter(adapter);
         reload=findViewById(R.id.button);
@@ -201,7 +152,7 @@ public class MainActivity extends Activity {
                 && grantResults[0] != PackageManager.PERMISSION_GRANTED)
             finish();
         else
-            init();
+            getPhoneImageUris();
     }
 }
 
