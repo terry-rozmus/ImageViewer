@@ -11,12 +11,12 @@
         android:id="@+id/images"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/darker_gray"
+        android:background="#36454f"
         android:columnWidth="100dp"
         android:fastScrollEnabled="true"
         android:gravity="center"
         android:numColumns="auto_fit"
         android:scrollbarAlwaysDrawVerticalTrack="true"
-        android:stretchMode="columnWidth"></GridView>
-
+        android:stretchMode="columnWidth">
+    </GridView>
 </LinearLayout>

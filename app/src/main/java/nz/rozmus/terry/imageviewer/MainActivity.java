@@ -2,6 +2,8 @@ package nz.rozmus.terry.imageviewer;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.GridView;
 import android.provider.MediaStore;
 import android.database.Cursor;
@@ -9,6 +11,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
+import android.widget.Toast;
 
 
 //
@@ -51,6 +54,14 @@ public class MainActivity extends Activity {
 
         // Pass current context to ImageAdapter
         adapter.setContext(getLayoutInflater().getContext());
+
+        GridView gridview = (GridView) findViewById(R.id.images);
+        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                Toast.makeText(MainActivity.this, "" + adapter.getUri(position),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override

@@ -169,6 +169,10 @@ public class ImageAdapter extends BaseAdapter {
         orientations.put(uri, orientation);
     }
 
+    protected String getUri(int position) {
+        return uris.get(position);
+    }
+
     protected void setContext(Context c) {
         context = c;
     }
