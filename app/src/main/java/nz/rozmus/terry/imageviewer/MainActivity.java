@@ -2,9 +2,6 @@ package nz.rozmus.terry.imageviewer;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.GridView;
 import android.provider.MediaStore;
 import android.database.Cursor;
@@ -16,7 +13,7 @@ import android.os.Build;
 // Show images on the phone
 //
 public class MainActivity extends Activity {
-    Button reload;
+    //Button reload;
     GridView imagelist;
     ImageAdapter adapter = new ImageAdapter();
 
@@ -46,17 +43,9 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         imagelist = findViewById(R.id.images);
         imagelist.setAdapter(adapter);
-        reload = findViewById(R.id.button);
 
         // Pass current context to ImageAdapter
         adapter.setContext(getLayoutInflater().getContext());
-
-        reload.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                adapter.notifyDataSetChanged();
-            }
-        });
     }
 
     @Override
