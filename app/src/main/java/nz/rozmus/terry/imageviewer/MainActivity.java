@@ -44,6 +44,9 @@ public class MainActivity extends Activity {
         imagelist = findViewById(R.id.images);
         imagelist.setAdapter(adapter);
 
+        // Initialise memory cache
+        adapter.initialiseMemoryCache();
+
         // Pass current context to ImageAdapter
         adapter.setContext(getLayoutInflater().getContext());
     }

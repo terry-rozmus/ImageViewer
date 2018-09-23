@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.util.LruCache;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +21,7 @@ public class ImageAdapter extends BaseAdapter {
     private static final String TAG = "Images";
     private List<String> uris = new ArrayList<>();
     private Context context;
+    private LruCache<String, Bitmap> mMemoryCache;
 
     // Holds phone image and it's position in the list
     class ViewHolder {
@@ -80,49 +82,86 @@ public class ImageAdapter extends BaseAdapter {
 
                 // get the string for the uri file location
                 String uri = uris.get(vh.position % uris.size());
-                
-                Bitmap bitmap = null;
-                try {
-                    // Get the size of the image
-                    BitmapFactory.decodeFile(uri, bitmapOptions);
 
-                    // Find scaling factor
-                    int dimension = Math.min(bitmapOptions.outHeight, bitmapOptions.outWidth);
-                    float scale = (float) dimension / 100;
+                // Try to get the bitmap from the cache first
+                Bitmap bitmap = getBitmapFromMemCache(uri);
 
-                    // Find sampling size
-                    int sampleSize = 1;
-                    while (sampleSize < scale) {
-                        sampleSize *= 2; // Must be a power of 2
+                // If it's not in the cache then thumbnail it and put it in the cache
+                if (bitmap == null) {
+                    try {
+                        // Get the size of the image
+                        BitmapFactory.decodeFile(uri, bitmapOptions);
+
+                        // Find scaling factor
+                        int dimension = Math.min(bitmapOptions.outHeight, bitmapOptions.outWidth);
+                        float scale = (float) dimension / 100;
+
+                        // Find sampling size
+                        int sampleSize = 1;
+                        while (sampleSize < scale) {
+                            sampleSize *= 2; // Must be a power of 2
+                        }
+                        bitmapOptions.inSampleSize = sampleSize;
+
+                        // Decode the phone images into bitmaps
+                        bitmapOptions.inJustDecodeBounds = false;
+                        bitmap = BitmapFactory.decodeFile(uri, bitmapOptions);
+
+                        // Put a copy in the cache
+                        addBitmapToMemoryCache(uri, bitmap);
+                    } catch (Exception e) {
+                        Log.i(TAG, "Error Loading:" + uri);
+                        e.printStackTrace();
                     }
-                    bitmapOptions.inSampleSize = sampleSize;
-
-                    // Decode the phone images into bitmaps
-                    bitmapOptions.inJustDecodeBounds = false;
-                    bitmap = BitmapFactory.decodeFile(uri, bitmapOptions);
-                } catch (Exception e) {
-                    Log.i(TAG,"Error Loading:" + uri);
-                    e.printStackTrace();
                 }
                 // return the bitmap (might be null)
                 return bitmap;
             }
 
             @Override
-            protected void onPostExecute(Bitmap bmp) {
+            protected void onPostExecute(Bitmap bitmap) {
                 // only set the imageview if the position hasn't changed.
-                if(vh.position==position)
-                    vh.image.setImageBitmap(bmp);
+                if(vh.position == position)
+                    vh.image.setImageBitmap(bitmap);
             }
         }.execute(vh);
         return convertView;
     }
 
-    public void addUri(String uri) {
+    protected void initialiseMemoryCache() {
+        // Get max available VM memory, exceeding this amount will throw an
+        // OutOfMemory exception. Stored in kilobytes as LruCache takes an
+        // int in its constructor.
+        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+
+        // Use 1/8th of the available memory for this memory cache.
+        final int cacheSize = maxMemory / 8;
+
+        mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+            @Override
+            protected int sizeOf(String key, Bitmap bitmap) {
+                // The cache size will be measured in kilobytes rather than
+                // number of items.
+                return bitmap.getByteCount() / 1024;
+            }
+        };
+    }
+
+    protected void addBitmapToMemoryCache(String key, Bitmap bitmap) {
+        if (getBitmapFromMemCache(key) == null) {
+            mMemoryCache.put(key, bitmap);
+        }
+    }
+
+    protected Bitmap getBitmapFromMemCache(String key) {
+        return mMemoryCache.get(key);
+    }
+
+    protected void addUri(String uri) {
         uris.add(uri);
     }
 
-    public void setContext(Context c) {
+    protected void setContext(Context c) {
         context = c;
     }
 }
