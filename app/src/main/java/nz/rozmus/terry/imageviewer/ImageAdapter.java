@@ -3,6 +3,7 @@ package nz.rozmus.terry.imageviewer;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.AsyncTask;
 import android.util.LruCache;
 import android.util.Log;
@@ -14,12 +15,15 @@ import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 // The adapter, this supplies data to the ListView,
 // it grabs an image in the background using an AsyncTask
 public class ImageAdapter extends BaseAdapter {
     private static final String TAG = "Images";
     private List<String> uris = new ArrayList<>();
+    private Map<String, Integer> orientations = new HashMap<>();
     private Context context;
     private LruCache<String, Bitmap> mMemoryCache;
 
@@ -82,37 +86,40 @@ public class ImageAdapter extends BaseAdapter {
 
                 // get the string for the uri file location
                 String uri = uris.get(vh.position % uris.size());
+                int orientation = orientations.get(uri);
 
                 // Try to get the bitmap from the cache first
                 Bitmap bitmap = getBitmapFromMemCache(uri);
 
                 // If it's not in the cache then thumbnail it and put it in the cache
                 if (bitmap == null) {
-                    try {
-                        // Get the size of the image
-                        BitmapFactory.decodeFile(uri, bitmapOptions);
+                    // Get the size of the image
+                    BitmapFactory.decodeFile(uri, bitmapOptions);
 
-                        // Find scaling factor
-                        int dimension = Math.min(bitmapOptions.outHeight, bitmapOptions.outWidth);
-                        float scale = (float) dimension / 100;
+                    // Find scaling factor
+                    int dimension = Math.min(bitmapOptions.outHeight, bitmapOptions.outWidth);
+                    float scale = (float) dimension / 100;
 
-                        // Find sampling size
-                        int sampleSize = 1;
-                        while (sampleSize < scale) {
-                            sampleSize *= 2; // Must be a power of 2
-                        }
-                        bitmapOptions.inSampleSize = sampleSize;
-
-                        // Decode the phone images into bitmaps
-                        bitmapOptions.inJustDecodeBounds = false;
-                        bitmap = BitmapFactory.decodeFile(uri, bitmapOptions);
-
-                        // Put a copy in the cache
-                        addBitmapToMemoryCache(uri, bitmap);
-                    } catch (Exception e) {
-                        Log.i(TAG, "Error Loading:" + uri);
-                        e.printStackTrace();
+                    // Find sampling size
+                    int sampleSize = 1;
+                    while (sampleSize < scale) {
+                        sampleSize *= 2; // Must be a power of 2
                     }
+                    bitmapOptions.inSampleSize = sampleSize;
+
+                    // Decode the phone images into bitmaps
+                    bitmapOptions.inJustDecodeBounds = false;
+                    bitmap = BitmapFactory.decodeFile(uri, bitmapOptions);
+
+                    // Post-process if image orientation is non-zero
+                    if (orientation > 0) {
+                        Matrix matrix = new Matrix();
+                        matrix.postRotate(orientation);
+                        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                    }
+
+                    // Put a copy in the cache
+                    addBitmapToMemoryCache(uri, bitmap);
                 }
                 // return the bitmap (might be null)
                 return bitmap;
@@ -157,8 +164,9 @@ public class ImageAdapter extends BaseAdapter {
         return mMemoryCache.get(key);
     }
 
-    protected void addUri(String uri) {
+    protected void addImageInfo(String uri, int orientation) {
         uris.add(uri);
+        orientations.put(uri, orientation);
     }
 
     protected void setContext(Context c) {

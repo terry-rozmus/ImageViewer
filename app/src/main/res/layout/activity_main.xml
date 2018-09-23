@@ -12,15 +12,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/darker_gray"
+        android:columnWidth="100dp"
         android:fastScrollEnabled="true"
-        android:scrollbarAlwaysDrawVerticalTrack="true"
-        android:columnWidth="90dp"
         android:gravity="center"
-        android:horizontalSpacing="10dp"
         android:numColumns="auto_fit"
-        android:padding="8dp"
-        android:stretchMode="columnWidth"
-        android:verticalSpacing="10dp">
-    </GridView>
+        android:scrollbarAlwaysDrawVerticalTrack="true"
+        android:stretchMode="columnWidth"></GridView>
 
 </LinearLayout>

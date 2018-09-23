@@ -8,12 +8,13 @@ import android.database.Cursor;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.util.Log;
+
 
 //
 // Show images on the phone
 //
 public class MainActivity extends Activity {
-    //Button reload;
     GridView imagelist;
     ImageAdapter adapter = new ImageAdapter();
 
@@ -24,7 +25,8 @@ public class MainActivity extends Activity {
         try {
             while (cursor.moveToNext()) {
                 String uri = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
-                adapter.addUri(uri);
+                int orientation = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.Media.ORIENTATION));
+                adapter.addImageInfo(uri, orientation);
             }
         } finally {
             cursor.close();
