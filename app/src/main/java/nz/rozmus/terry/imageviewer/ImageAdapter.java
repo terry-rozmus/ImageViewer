@@ -111,10 +111,13 @@ public class ImageAdapter extends BaseAdapter {
                     bitmapOptions.inJustDecodeBounds = false;
                     bitmap = BitmapFactory.decodeFile(uri, bitmapOptions);
 
-                    // Crop bitmap by inputed dimensions (which allows square thumbnails)
-                    bitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height);
+                    // Crop bitmap by inputed dimensions if width and height are the same
+                    // (which allows square thumbnails in mainActivity)
+                    if (width == height) {
+                        bitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height);
+                    }
 
-                    // Post-process if image orientation is non-zero
+                    // Rotate bitmap if image orientation flag is non-zero
                     if (orientation > 0) {
                         Matrix matrix = new Matrix();
                         matrix.postRotate(orientation);
