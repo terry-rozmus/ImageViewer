@@ -1,7 +1,9 @@
 package nz.rozmus.terry.imageviewer;
 
-import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
@@ -10,18 +12,15 @@ import android.database.Cursor;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.util.Log;
-import android.widget.Toast;
-
 
 //
 // Show images on the phone
 //
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
     GridView imagelist;
     ImageAdapter adapter = new ImageAdapter();
 
-    private void getPhoneImageUris() {
+    private void getPhoneImages() {
         String[] star = {"*"};
         Cursor cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 star, null, null, "date_added DESC");
@@ -43,14 +42,28 @@ public class MainActivity extends Activity {
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         } else {
-            getPhoneImageUris();
+            getPhoneImages();
         }
+
+        // Determine and store the screen size
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int screenHeight = displayMetrics.heightPixels;
+        int screenWidth = displayMetrics.widthPixels;
+
+        // Make sure the action bar is hidden
+        getSupportActionBar().hide();
+
         setContentView(R.layout.activity_main);
         imagelist = findViewById(R.id.images);
         imagelist.setAdapter(adapter);
 
         // Initialise memory cache
-        adapter.initialiseMemoryCache();
+        adapter.initialiseCache();
+
+        // Send square image dimensions to adapter
+        int imageSize = Math.min(screenWidth, screenHeight) / 3;
+        adapter.setImageSize(imageSize, imageSize);
 
         // Pass current context to ImageAdapter
         adapter.setContext(getLayoutInflater().getContext());
@@ -58,8 +71,11 @@ public class MainActivity extends Activity {
         GridView gridview = (GridView) findViewById(R.id.images);
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                Toast.makeText(MainActivity.this, "" + adapter.getUri(position),
-                        Toast.LENGTH_SHORT).show();
+                // Pass uri to the single photo viewer activity and start it
+                Intent myIntent = new Intent(MainActivity.this, SinglePhotoActivity.class);
+                myIntent.putExtra("uri", adapter.getUri(position));
+                myIntent.putExtra("orientation", String.valueOf(adapter.getOrientation(position)));
+                MainActivity.this.startActivity(myIntent);
             }
         });
     }
@@ -71,7 +87,7 @@ public class MainActivity extends Activity {
                 && grantResults[0] != PackageManager.PERMISSION_GRANTED)
             finish();
         else
-            getPhoneImageUris();
+            getPhoneImages();
     }
 }
 

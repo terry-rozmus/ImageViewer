@@ -1,17 +1,20 @@
 package nz.rozmus.terry.imageviewer;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.os.AsyncTask;
+import android.util.DisplayMetrics;
 import android.util.LruCache;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
+import android.media.ThumbnailUtils;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,12 +29,8 @@ public class ImageAdapter extends BaseAdapter {
     private Map<String, Integer> orientations = new HashMap<>();
     private Context context;
     private LruCache<String, Bitmap> mMemoryCache;
-
-    // Holds phone image and it's position in the list
-    class ViewHolder {
-        int position;
-        ImageView image;
-    }
+    private int height;
+    private int width;
 
     // How many items in the image uris ListView
     @Override
@@ -98,7 +97,8 @@ public class ImageAdapter extends BaseAdapter {
 
                     // Find scaling factor
                     int dimension = Math.min(bitmapOptions.outHeight, bitmapOptions.outWidth);
-                    float scale = (float) dimension / 100;
+                    int targetSize = Math.max(height, width);
+                    float scale = (float) dimension / targetSize;
 
                     // Find sampling size
                     int sampleSize = 1;
@@ -110,6 +110,9 @@ public class ImageAdapter extends BaseAdapter {
                     // Decode the phone images into bitmaps
                     bitmapOptions.inJustDecodeBounds = false;
                     bitmap = BitmapFactory.decodeFile(uri, bitmapOptions);
+
+                    // Crop bitmap by inputed dimensions (which allows square thumbnails)
+                    bitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height);
 
                     // Post-process if image orientation is non-zero
                     if (orientation > 0) {
@@ -135,7 +138,7 @@ public class ImageAdapter extends BaseAdapter {
         return convertView;
     }
 
-    protected void initialiseMemoryCache() {
+    protected void initialiseCache() {
         // Get max available VM memory, exceeding this amount will throw an
         // OutOfMemory exception. Stored in kilobytes as LruCache takes an
         // int in its constructor.
@@ -173,7 +176,17 @@ public class ImageAdapter extends BaseAdapter {
         return uris.get(position);
     }
 
+    protected int getOrientation(int position) {
+        String uri = uris.get(position);
+        return orientations.get(uri);
+    }
+
     protected void setContext(Context c) {
         context = c;
+    }
+
+    protected void setImageSize(int h, int w) {
+        height = h;
+        width = w;
     }
 }
