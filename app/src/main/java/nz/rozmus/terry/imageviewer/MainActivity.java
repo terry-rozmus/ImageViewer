@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.provider.MediaStore;
@@ -12,6 +13,7 @@ import android.database.Cursor;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.widget.Toast;
 
 //
 // Show images on the phone
@@ -19,6 +21,8 @@ import android.os.Build;
 public class MainActivity extends AppCompatActivity {
     GridView imagelist;
     ImageAdapter adapter = new ImageAdapter();
+    int screenHeight;
+    int screenWidth;
 
     private void getPhoneImages() {
         String[] star = {"*"};
@@ -37,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Toast.makeText(MainActivity.this, "Test", Toast.LENGTH_SHORT).show();
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT > 23 && checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -48,14 +53,41 @@ public class MainActivity extends AppCompatActivity {
         // Determine and store the screen size
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        int screenHeight = displayMetrics.heightPixels;
-        int screenWidth = displayMetrics.widthPixels;
+        screenHeight = displayMetrics.heightPixels;
+        screenWidth = displayMetrics.widthPixels;
 
         // Make sure the action bar is hidden
         getSupportActionBar().hide();
 
         setContentView(R.layout.activity_main);
         imagelist = findViewById(R.id.images);
+        imagelist.setAdapter(adapter);
+
+        // Initialise memory cache
+        adapter.initialiseCache();
+
+        // Send square image dimensions to adapter
+        int imageSize = Math.min(screenWidth, screenHeight) / 3;
+        adapter.setImageSize(imageSize, imageSize);
+
+        // Pass current context to ImageAdapter
+        adapter.setContext(getLayoutInflater().getContext());
+
+        GridView gridview = (GridView) findViewById(R.id.images);
+        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                // Pass uri to the single photo viewer activity and start it
+                Intent myIntent = new Intent(MainActivity.this, SinglePhotoActivity.class);
+                myIntent.putExtra("uri", adapter.getUri(position));
+                myIntent.putExtra("orientation", String.valueOf(adapter.getOrientation(position)));
+                MainActivity.this.startActivity(myIntent);
+            }
+        });
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
         imagelist.setAdapter(adapter);
 
         // Initialise memory cache
