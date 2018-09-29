@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         if (Build.VERSION.SDK_INT > 23 && checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
@@ -78,6 +79,17 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.this.startActivity(myIntent);
             }
         });
+
+    }
+
+    @Override
+    protected void onStop() {
+        // I tried multiple ways of getting the the view to
+        // invalidate so that it would reload when a new image
+        // taken, but couldn't get it to work (invalidate on onStart, onResume
+        // and also reattaching adapter at on Start and onResume)
+        super.onStop();
+        imagelist.invalidate();
     }
 
     @Override
