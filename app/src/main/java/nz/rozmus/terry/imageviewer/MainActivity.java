@@ -12,16 +12,22 @@ import android.database.Cursor;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.widget.Toast;
 
 //
 // Show images on the phone
 //
 public class MainActivity extends AppCompatActivity {
     GridView imagelist;
-    ImageAdapter adapter = new ImageAdapter();
+    ImageAdapter adapter;
+    int screenHeight;
+    int screenWidth;
+    boolean firstTime;
+    boolean toLarge;
 
     private void getPhoneImages() {
         String[] star = {"*"};
+        adapter = new ImageAdapter();
         Cursor cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 star, null, null, "date_added DESC");
         try {
@@ -49,47 +55,60 @@ public class MainActivity extends AppCompatActivity {
         // Determine and store the screen size
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        int screenHeight = displayMetrics.heightPixels;
-        int screenWidth = displayMetrics.widthPixels;
+        screenHeight = displayMetrics.heightPixels;
+        screenWidth = displayMetrics.widthPixels;
 
         // Make sure the action bar is hidden
         getSupportActionBar().hide();
 
         setContentView(R.layout.activity_main);
-        imagelist = findViewById(R.id.images);
-        imagelist.setAdapter(adapter);
 
-        // Initialise memory cache
-        adapter.initialiseCache();
-
-        // Send square image dimensions to adapter
-        int imageSize = Math.min(screenWidth, screenHeight) / 3;
-        adapter.setImageSize(imageSize, imageSize);
-
-        // Pass current context to ImageAdapter
-        adapter.setContext(getLayoutInflater().getContext());
-
-        GridView gridview = (GridView) findViewById(R.id.images);
-        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                // Pass uri to the single photo viewer activity and start it
-                Intent myIntent = new Intent(MainActivity.this, SinglePhotoActivity.class);
-                myIntent.putExtra("uri", adapter.getUri(position));
-                myIntent.putExtra("orientation", String.valueOf(adapter.getOrientation(position)));
-                MainActivity.this.startActivity(myIntent);
-            }
-        });
-
+        firstTime = true;
+        toLarge = false;
     }
 
     @Override
-    protected void onStop() {
-        // I tried multiple ways of getting the the view to
-        // invalidate so that it would reload when a new image
-        // taken, but couldn't get it to work (invalidate on onStart, onResume
-        // and also reattaching adapter at on Start and onResume)
-        super.onStop();
-        imagelist.invalidate();
+    protected void onStart() {
+        super.onStart();
+
+        // Do a first load or reload when returning from an activity
+        // outside the Image Viewer app
+        if (!toLarge || firstTime) {
+            if (Build.VERSION.SDK_INT > 23 && checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+            } else {
+                getPhoneImages();
+            }
+
+            imagelist = findViewById(R.id.images);
+            firstTime = false;
+
+            imagelist.setAdapter(adapter);
+
+            // Initialise memory cache
+            adapter.initialiseCache();
+
+            // Send square image dimensions to adapter
+            int imageSize = Math.min(screenWidth, screenHeight) / 3;
+            adapter.setImageSize(imageSize, imageSize);
+
+            // Pass current context to ImageAdapter
+            adapter.setContext(getLayoutInflater().getContext());
+
+            GridView gridview = (GridView) findViewById(R.id.images);
+            gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                    // Pass uri to the single photo viewer activity and start it
+                    Intent myIntent = new Intent(MainActivity.this, SinglePhotoActivity.class);
+                    myIntent.putExtra("uri", adapter.getUri(position));
+                    myIntent.putExtra("orientation", String.valueOf(adapter.getOrientation(position)));
+                    MainActivity.this.startActivity(myIntent);
+                    toLarge = true;
+                }
+            });
+        }
+        toLarge = false;
     }
 
     @Override
