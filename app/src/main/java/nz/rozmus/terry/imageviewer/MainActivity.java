@@ -39,9 +39,33 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void setImageList() {
+        imagelist.setAdapter(adapter);
+
+        // Initialise memory cache
+        adapter.initialiseCache();
+
+        // Send square image dimensions to adapter
+        int imageSize = Math.min(screenWidth, screenHeight) / 3;
+        adapter.setImageSize(imageSize, imageSize);
+
+        // Pass current context to ImageAdapter
+        adapter.setContext(getLayoutInflater().getContext());
+
+        // Set listener so that a larger view can be opened
+        imagelist.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
+                // Pass uri to the single photo viewer activity and start it
+                Intent myIntent = new Intent(MainActivity.this, SinglePhotoActivity.class);
+                myIntent.putExtra("uri", adapter.getUri(position));
+                myIntent.putExtra("orientation", String.valueOf(adapter.getOrientation(position)));
+                MainActivity.this.startActivity(myIntent);
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Toast.makeText(MainActivity.this, "Test", Toast.LENGTH_SHORT).show();
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT > 23 && checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -61,55 +85,17 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
         imagelist = findViewById(R.id.images);
-        imagelist.setAdapter(adapter);
-
-        // Initialise memory cache
-        adapter.initialiseCache();
-
-        // Send square image dimensions to adapter
-        int imageSize = Math.min(screenWidth, screenHeight) / 3;
-        adapter.setImageSize(imageSize, imageSize);
-
-        // Pass current context to ImageAdapter
-        adapter.setContext(getLayoutInflater().getContext());
-
-        GridView gridview = (GridView) findViewById(R.id.images);
-        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                // Pass uri to the single photo viewer activity and start it
-                Intent myIntent = new Intent(MainActivity.this, SinglePhotoActivity.class);
-                myIntent.putExtra("uri", adapter.getUri(position));
-                myIntent.putExtra("orientation", String.valueOf(adapter.getOrientation(position)));
-                MainActivity.this.startActivity(myIntent);
-            }
-        });
+        setImageList();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        imagelist.setAdapter(adapter);
 
-        // Initialise memory cache
-        adapter.initialiseCache();
-
-        // Send square image dimensions to adapter
-        int imageSize = Math.min(screenWidth, screenHeight) / 3;
-        adapter.setImageSize(imageSize, imageSize);
-
-        // Pass current context to ImageAdapter
-        adapter.setContext(getLayoutInflater().getContext());
-
-        GridView gridview = (GridView) findViewById(R.id.images);
-        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                // Pass uri to the single photo viewer activity and start it
-                Intent myIntent = new Intent(MainActivity.this, SinglePhotoActivity.class);
-                myIntent.putExtra("uri", adapter.getUri(position));
-                myIntent.putExtra("orientation", String.valueOf(adapter.getOrientation(position)));
-                MainActivity.this.startActivity(myIntent);
-            }
-        });
+        // Get the phone image list again
+        // and Set image list so that the list updates when returning from another app
+        getPhoneImages();
+        setImageList();
     }
 
     @Override

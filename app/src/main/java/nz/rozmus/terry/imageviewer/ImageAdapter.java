@@ -93,7 +93,12 @@ public class ImageAdapter extends BaseAdapter {
                 // If it's not in the cache then thumbnail it and put it in the cache
                 if (bitmap == null) {
                     // Get the size of the image
-                    BitmapFactory.decodeFile(uri, bitmapOptions);
+                    try {
+                        BitmapFactory.decodeFile(uri, bitmapOptions);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Log.e("IO","IO"+e);
+                    }
 
                     // Find scaling factor
                     int dimension = Math.min(bitmapOptions.outHeight, bitmapOptions.outWidth);
@@ -109,7 +114,12 @@ public class ImageAdapter extends BaseAdapter {
 
                     // Decode the phone images into bitmaps
                     bitmapOptions.inJustDecodeBounds = false;
-                    bitmap = BitmapFactory.decodeFile(uri, bitmapOptions);
+                    try {
+                        BitmapFactory.decodeFile(uri, bitmapOptions);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Log.e("IO","IO"+e);
+                    }
 
                     // Crop bitmap by inputed dimensions if width and height are the same
                     // (which allows square thumbnails in mainActivity)
